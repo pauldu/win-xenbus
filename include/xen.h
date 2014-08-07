@@ -152,6 +152,14 @@ EventChannelBindVirq(
 __checkReturn
 XEN_API
 NTSTATUS
+EventChannelBindVector(
+    IN  evtchn_port_t   LocalPort,
+    IN  ULONG           Vector
+    );
+
+__checkReturn
+XEN_API
+NTSTATUS
 EventChannelClose(
     IN  evtchn_port_t   LocalPort
     );

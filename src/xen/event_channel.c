@@ -175,6 +175,37 @@ fail1:
 __checkReturn
 XEN_API
 NTSTATUS
+EventChannelBindVector(
+    IN  evtchn_port_t           LocalPort,
+    IN  ULONG                   Vector
+    )
+{
+    struct evtchn_bind_vector   op;
+    LONG_PTR                    rc;
+    NTSTATUS                    status;
+
+    op.domid = DOMID_SELF;
+    op.port = LocalPort;
+    op.vector = Vector;
+
+    rc = EventChannelOp(EVTCHNOP_bind_vector, &op);
+
+    if (rc < 0) {
+        ERRNO_TO_STATUS(-rc, status);
+        goto fail1;
+    }
+
+    return STATUS_SUCCESS;
+
+fail1:
+    Error("fail1 (%08x)\n", status);
+
+    return status;
+}
+
+__checkReturn
+XEN_API
+NTSTATUS
 EventChannelClose(
     IN  evtchn_port_t   LocalPort
     )

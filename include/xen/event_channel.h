@@ -71,6 +71,7 @@
 #define EVTCHNOP_bind_vcpu        8
 #define EVTCHNOP_unmask           9
 #define EVTCHNOP_reset           10
+#define EVTCHNOP_bind_vector     14
 /* ` } */
 
 typedef uint32_t evtchn_port_t;
@@ -256,6 +257,18 @@ struct evtchn_reset {
     domid_t dom;
 };
 typedef struct evtchn_reset evtchn_reset_t;
+
+/*
+ * EVTCHNOP_bind_vector: bind a particular evtchn to a particular vector
+ *                       on the current vcpu
+ */
+struct evtchn_bind_vector {
+    /* IN parameters */
+    domid_t domid;
+    evtchn_port_t port;
+    int64_t vector;
+};
+typedef struct evtchn_bind_vector evtchn_bind_vector_t;
 
 /*
  * ` enum neg_errnoval
