@@ -1804,6 +1804,11 @@ StoreEvtchnCallback(
 
     ASSERT(Context != NULL);
 
+    XENBUS_EVTCHN(Ack,
+                  &Context->EvtchnInterface,
+                  Context->Channel,
+                  TRUE);
+
     KeInsertQueueDpc(&Context->Dpc, NULL, NULL);
 
     return TRUE;
@@ -1837,8 +1842,7 @@ StoreEnable(
                                      XENBUS_EVTCHN_TYPE_FIXED,
                                      StoreEvtchnCallback,
                                      Context,
-                                     Port,
-                                     FALSE);
+                                     Port);
     ASSERT(Context->Channel != NULL);
 
     Pending = XENBUS_EVTCHN(Unmask,

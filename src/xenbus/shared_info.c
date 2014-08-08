@@ -298,6 +298,7 @@ SharedInfoEvtchnUnmask(
     if (!SharedInfoClearBit(&Shared->evtchn_pending[SelectorBit], PortBit))
         return FALSE;
 
+    // Something was pending
     return TRUE;
 }
 

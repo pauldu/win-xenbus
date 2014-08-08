@@ -78,11 +78,11 @@ AddService=xenbus,0x02,XenBus_Service,
 [XenBus_Service] 
 DisplayName=%XenBusDesc%
 ServiceType=%SERVICE_KERNEL_DRIVER% 
-StartType=%SERVICE_BOOT_START% 
+StartType=%SERVICE_DEMAND_START% 
 ErrorControl=%SERVICE_ERROR_NORMAL% 
 ServiceBinary=%12%\xenbus.sys 
 LoadOrderGroup="Boot Bus Extender"
-AddReg = XenBus_Parameters, XenBus_Interfaces
+AddReg = XenBus_Parameters, XenBus_Interfaces, XenBus_Interrupts
 
 [XenBus_Parameters]
 HKR,"Parameters",,0x00000010
@@ -91,6 +91,11 @@ HKR,"Parameters","SyntheticClasses",0x00010000,"IFACE"
 
 [XenBus_Interfaces]
 HKR,"Interfaces",,0x00000010
+
+[XenBus_Interrupts]
+HKR,"Interrupt Management",,0x00000010
+HKR,"Interrupt Management\MessageSignaledInterruptProperties",,0x00000010
+HKR,"Interrupt Management\MessageSignaledInterruptProperties","MSISupported",0x00010001,1
 
 [XenFilt_Service] 
 DisplayName=%XenFiltDesc%

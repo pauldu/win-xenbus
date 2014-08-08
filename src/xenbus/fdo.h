@@ -38,6 +38,8 @@
 #include "driver.h"
 #include "types.h"
 
+typedef struct _XENBUS_INTERRUPT XENBUS_INTERRUPT, *PXENBUS_INTERRUPT;
+
 extern NTSTATUS
 FdoCreate(
     IN  PDEVICE_OBJECT  PhysicalDeviceObject,
@@ -140,22 +142,14 @@ FdoFreeIoSpace(
     IN  ULONG               Size
     );
 
-extern ULONG
-FdoGetInterruptVector(
-    IN  PXENBUS_FDO Fdo
-    );
-
-// Disable erroneous SAL warnings around use of interrupt locks
-#pragma warning(disable:28230)
-#pragma warning(disable:28285)
-
 extern
 _IRQL_requires_max_(HIGH_LEVEL)
 _IRQL_saves_
 _IRQL_raises_(HIGH_LEVEL)
 KIRQL
 FdoAcquireInterruptLock(
-    IN  PXENBUS_FDO Fdo
+    IN  PXENBUS_FDO         Fdo,
+    IN  PXENBUS_INTERRUPT   Interrupt
     );
 
 extern
@@ -163,7 +157,37 @@ _IRQL_requires_(HIGH_LEVEL)
 VOID
 FdoReleaseInterruptLock(
     IN  PXENBUS_FDO                 Fdo,
+    IN  PXENBUS_INTERRUPT           Interrupt,
     IN  __drv_restoresIRQL KIRQL    Irql
+    );
+
+extern NTSTATUS
+FdoAllocateInterrupt(
+    IN  PXENBUS_FDO         Fdo,
+    IN  KINTERRUPT_MODE     InterruptMode,
+    IN  KSERVICE_ROUTINE    Callback,
+    IN  PVOID               Argument OPTIONAL,
+    OUT PXENBUS_INTERRUPT   *Interrupt
+    );
+
+extern VOID
+FdoGetInterruptVector(
+    IN  PXENBUS_FDO         Fdo,
+    IN  PXENBUS_INTERRUPT   Interrupt,
+    OUT PULONG              Vector,
+    OUT PKAFFINITY          Affinity
+    );
+
+extern ULONG
+FdoGetInterruptLine(
+    IN  PXENBUS_FDO         Fdo,
+    IN  PXENBUS_INTERRUPT   Interrupt
+    );
+
+extern VOID
+FdoFreeInterrupt(
+    IN  PXENBUS_FDO         Fdo,
+    IN  PXENBUS_INTERRUPT   Interrupt
     );
 
 #include "suspend.h"

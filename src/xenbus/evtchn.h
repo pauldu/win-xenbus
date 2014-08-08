@@ -59,10 +59,5 @@ EvtchnTeardown(
     IN  PXENBUS_EVTCHN_CONTEXT  Context
     );
 
-extern BOOLEAN
-EvtchnInterrupt(
-    IN  PXENBUS_EVTCHN_CONTEXT  Context
-    );
-
 #endif  // _XENBUS_EVTCHN_H
 

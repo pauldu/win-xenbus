@@ -112,6 +112,34 @@ typedef PXENBUS_EVTCHN_CHANNEL
     ...
     );
 
+/*! \typedef XENBUS_EVTCHN_ACK
+    \brief Acknowledge an event channel
+
+    \param Interface The interface header
+    \param Channel The channel handle
+    \param Locked Set to TRUE if this method is invoked in context of the channel callback
+*/
+typedef VOID
+(*XENBUS_EVTCHN_ACK)(
+    IN  PINTERFACE              Interface,
+    IN  PXENBUS_EVTCHN_CHANNEL  Channel,
+    IN  BOOLEAN                 Locked
+    );
+
+/*! \typedef XENBUS_EVTCHN_MASK
+    \brief Mask an event channel
+
+    \param Interface The interface header
+    \param Channel The channel handle
+    \param Locked Set to TRUE if this method is invoked in context of the channel callback
+*/
+typedef VOID
+(*XENBUS_EVTCHN_MASK)(
+    IN  PINTERFACE              Interface,
+    IN  PXENBUS_EVTCHN_CHANNEL  Channel,
+    IN  BOOLEAN                 Locked
+    );
+
 /*! \typedef XENBUS_EVTCHN_UNMASK
     \brief Unmask an event channel
 
@@ -188,6 +216,8 @@ struct _XENBUS_EVTCHN_INTERFACE_V1 {
     XENBUS_EVTCHN_ACQUIRE   EvtchnAcquire;
     XENBUS_EVTCHN_RELEASE   EvtchnRelease;
     XENBUS_EVTCHN_OPEN      EvtchnOpen;
+    XENBUS_EVTCHN_ACK       EvtchnAck;
+    XENBUS_EVTCHN_MASK      EvtchnMask;
     XENBUS_EVTCHN_UNMASK    EvtchnUnmask;
     XENBUS_EVTCHN_SEND      EvtchnSend;
     XENBUS_EVTCHN_SEND      EvtchnTrigger;
