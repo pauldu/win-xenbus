@@ -134,6 +134,7 @@ struct _XENBUS_STORE_CONTEXT {
     XENBUS_STORE_RESPONSE               Response;
     XENBUS_EVTCHN_INTERFACE             EvtchnInterface;
     PHYSICAL_ADDRESS                    Address;
+    PXENBUS_INTERRUPT                   Interrupt;
     PXENBUS_EVTCHN_CHANNEL              Channel;
     XENBUS_SUSPEND_INTERFACE            SuspendInterface;
     XENBUS_DEBUG_INTERFACE              DebugInterface;
@@ -1831,6 +1832,8 @@ StoreEnable(
     )
 {
     ULONGLONG                   Port;
+    ULONG                       Vector;
+    KAFFINITY                   Affinity;
     BOOLEAN                     Pending;
     NTSTATUS                    status;
 
@@ -1844,6 +1847,18 @@ StoreEnable(
                                      Context,
                                      Port);
     ASSERT(Context->Channel != NULL);
+
+    FdoGetInterruptVector(Context->Fdo,
+                          Context->Interrupt,
+                          &Vector,
+                          &Affinity);
+
+    status = XENBUS_EVTCHN(Bind,
+                           &Context->EvtchnInterface,
+                           Context->Channel,
+                           Vector);
+
+    Info("%s EVTCHN\n", NT_SUCCESS(status) ? "BOUND" : "MULTIPLEXED");
 
     Pending = XENBUS_EVTCHN(Unmask,
                             &Context->EvtchnInterface,
@@ -2093,6 +2108,7 @@ StoreAcquire(
     )
 {
     PXENBUS_STORE_CONTEXT   Context = Interface->Context;
+    PXENBUS_FDO             Fdo = Context->Fdo;
     KIRQL                   Irql;
     NTSTATUS                status;
 
@@ -2111,16 +2127,24 @@ StoreAcquire(
     if (Context->Shared == NULL)
         goto fail1;
 
+    status = FdoAllocateInterrupt(Fdo,
+                                  Latched,
+                                  StoreEvtchnCallback,
+                                  Context,
+                                  &Context->Interrupt);
+    if (!NT_SUCCESS(status))
+        goto fail2;               
+
     status = XENBUS_EVTCHN(Acquire, &Context->EvtchnInterface);
     if (!NT_SUCCESS(status))
-        goto fail2;
+        goto fail3;
 
     StoreResetResponse(Context);
     StoreEnable(Context);
 
     status = XENBUS_SUSPEND(Acquire, &Context->SuspendInterface);
     if (!NT_SUCCESS(status))
-        goto fail3;
+        goto fail4;
 
     status = XENBUS_SUSPEND(Register,
                             &Context->SuspendInterface,
@@ -2129,7 +2153,7 @@ StoreAcquire(
                             Context,
                             &Context->SuspendCallbackEarly);
     if (!NT_SUCCESS(status))
-        goto fail4;
+        goto fail5;
 
     status = XENBUS_SUSPEND(Register,
                             &Context->SuspendInterface,
@@ -2138,11 +2162,11 @@ StoreAcquire(
                             Context,
                             &Context->SuspendCallbackLate);
     if (!NT_SUCCESS(status))
-        goto fail5;
+        goto fail6;
 
     status = XENBUS_DEBUG(Acquire, &Context->DebugInterface);
     if (!NT_SUCCESS(status))
-        goto fail6;
+        goto fail7;
 
     status = XENBUS_DEBUG(Register,
                           &Context->DebugInterface,
@@ -2151,7 +2175,7 @@ StoreAcquire(
                           Context,
                           &Context->DebugCallback);
     if (!NT_SUCCESS(status))
-        goto fail7;
+        goto fail8;
 
     Trace("<====\n");
 
@@ -2160,39 +2184,45 @@ done:
 
     return STATUS_SUCCESS;
 
-fail7:
-    Error("fail7\n");
+fail8:
+    Error("fail8\n");
 
     XENBUS_DEBUG(Release, &Context->DebugInterface);
 
-fail6:
-    Error("fail6\n");
+fail7:
+    Error("fail7\n");
 
     XENBUS_SUSPEND(Deregister,
                    &Context->SuspendInterface,
                    Context->SuspendCallbackLate);
     Context->SuspendCallbackLate = NULL;
 
-fail5:
-    Error("fail5\n");
+fail6:
+    Error("fail6\n");
 
     XENBUS_SUSPEND(Deregister,
                    &Context->SuspendInterface,
                    Context->SuspendCallbackEarly);
     Context->SuspendCallbackEarly = NULL;
 
-fail4:
-    Error("fail4\n");
+fail5:
+    Error("fail5\n");
 
     XENBUS_SUSPEND(Release, &Context->SuspendInterface);
 
-fail3:
-    Error("fail3\n");
+fail4:
+    Error("fail4\n");
 
     StoreDisable(Context);
     RtlZeroMemory(&Context->Response, sizeof (XENBUS_STORE_RESPONSE));
 
     XENBUS_EVTCHN(Release, &Context->EvtchnInterface);
+
+fail3:
+    Error("fail3\n");
+
+    FdoFreeInterrupt(Fdo, Context->Interrupt);
+    Context->Interrupt = NULL;
 
 fail2:
     Error("fail2\n");
@@ -2218,6 +2248,7 @@ StoreRelease(
     )
 {
     PXENBUS_STORE_CONTEXT   Context = Interface->Context;
+    PXENBUS_FDO             Fdo = Context->Fdo;
     KIRQL                   Irql;    
 
     KeAcquireSpinLock(&Context->Lock, &Irql);
@@ -2259,6 +2290,9 @@ StoreRelease(
     RtlZeroMemory(&Context->Response, sizeof (XENBUS_STORE_RESPONSE));
 
     XENBUS_EVTCHN(Release, &Context->EvtchnInterface);
+
+    FdoFreeInterrupt(Fdo, Context->Interrupt);
+    Context->Interrupt = NULL;
 
     MmUnmapIoSpace(Context->Shared, PAGE_SIZE);
     Context->Shared = NULL;
