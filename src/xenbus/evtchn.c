@@ -380,6 +380,35 @@ fail1:
     return NULL;
 }
 
+static NTSTATUS
+EvtchnBind(
+    IN  PINTERFACE              Interface,
+    IN  PXENBUS_EVTCHN_CHANNEL  Channel,
+    IN  ULONG                   Vector
+    )
+{
+    KIRQL                       Irql;
+    NTSTATUS                    status;
+
+    UNREFERENCED_PARAMETER(Interface);
+
+    ASSERT3U(Channel->Magic, ==, XENBUS_EVTCHN_CHANNEL_MAGIC);
+
+    // Make sure we don't suspend
+    KeRaiseIrql(DISPATCH_LEVEL, &Irql);
+
+    status = STATUS_UNSUCCESSFUL;
+    if (!Channel->Active)
+        goto done;
+
+    status = EventChannelBindVector(Channel->LocalPort, Vector);
+
+done:
+    KeLowerIrql(Irql);
+
+    return status;
+}
+
 static VOID
 EvtchnAck(
     IN  PINTERFACE              Interface,
@@ -918,6 +947,7 @@ static struct _XENBUS_EVTCHN_INTERFACE_V1 EvtchnInterfaceVersion1 = {
     EvtchnAcquire,
     EvtchnRelease,
     EvtchnOpen,
+    EvtchnBind,
     EvtchnAck,
     EvtchnMask,
     EvtchnUnmask,

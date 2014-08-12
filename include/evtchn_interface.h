@@ -112,6 +112,20 @@ typedef PXENBUS_EVTCHN_CHANNEL
     ...
     );
 
+/*! \typedef XENBUS_EVTCHN_BIND
+    \brief Bind an event channel to a vector on the current CPU
+
+    \param Interface The interface header
+    \param Channel The channel handle
+    \param Vector The vector to use for the event channel
+*/
+typedef NTSTATUS
+(*XENBUS_EVTCHN_BIND)(
+    IN  PINTERFACE              Interface,
+    IN  PXENBUS_EVTCHN_CHANNEL  Channel,
+    IN  ULONG                   Vector
+    );
+
 /*! \typedef XENBUS_EVTCHN_ACK
     \brief Acknowledge an event channel
 
@@ -216,6 +230,7 @@ struct _XENBUS_EVTCHN_INTERFACE_V1 {
     XENBUS_EVTCHN_ACQUIRE   EvtchnAcquire;
     XENBUS_EVTCHN_RELEASE   EvtchnRelease;
     XENBUS_EVTCHN_OPEN      EvtchnOpen;
+    XENBUS_EVTCHN_BIND      EvtchnBind;
     XENBUS_EVTCHN_ACK       EvtchnAck;
     XENBUS_EVTCHN_MASK      EvtchnMask;
     XENBUS_EVTCHN_UNMASK    EvtchnUnmask;
